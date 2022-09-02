@@ -1,0 +1,34 @@
+---
+name: 'Add write permissions for CODEOWNERS'
+author: 'Evan Lee <@Archetypically>'
+
+description: Add missing write permissions for CODEOWNERS.
+
+branding:
+  icon: sliders
+  color: green
+
+inputs:
+  file-path:
+    description: |
+      The path to the CODEOWNERS file to operate on.
+      Otherwise searches for valid CODEOWNERS files as described in:
+      https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#codeowners-file-location.
+    required: false
+    default: CODEOWNERS
+  dry-run:
+    description: Whether or not to actually make the updates
+    required: false
+    default: false
+
+  github-token:
+    description: A token to use for authenticating to GitHub.
+    required: true
+
+outputs:
+  added-permissions-for:
+    description: |
+      A space-separated list of usernames or team names that had their permissions updated.
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

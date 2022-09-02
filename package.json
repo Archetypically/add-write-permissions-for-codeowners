@@ -1,0 +1,94 @@
+{
+  "name": "add-write-permissions-for-codeowners",
+  "version": "1.0.0",
+  "description": "A GitHub Action to add missing write permissions for CODEOWNERS.",
+  "main": "compiled/index.js",
+  "scripts": {
+    "compile": "tsc",
+    "preaction": "tsc",
+    "action": "dotenv -e development/.env.development -e development/.env.github-token -- node compiled/index.js",
+    "format": "prettier --write **/*.ts",
+    "format:check": "prettier --check **/*.ts",
+    "lint": "eslint --fix **/*.ts",
+    "lint:check": "eslint **/*.ts",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "test:ci": "jest --coverage --silent",
+    "package": "ncc build --source-map --license licenses.txt",
+    "preci:package": "tsc",
+    "ci:package": "yarn package"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Archetypically/add-write-permissions-for-codeowners.git"
+  },
+  "keywords": [
+    "github",
+    "actions",
+    "codeowners"
+  ],
+  "author": "Evan Lee <@Archetypically>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Archetypically/add-write-permissions-for-codeowners/issues"
+  },
+  "homepage": "https://github.com/Archetypically/add-write-permissions-for-codeowners#readme",
+  "jest": {
+    "preset": "ts-jest",
+    "clearMocks": true,
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/*.test.ts"
+    ],
+    "verbose": true
+  },
+  "eslintConfig": {
+    "extends": "eslint:recommended",
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint",
+      "jest"
+    ],
+    "env": {
+      "jest/globals": true,
+      "node": true
+    },
+    "parserOptions": {
+      "ecmaVersion": 2018,
+      "sourceType": "module"
+    },
+    "rules": {
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          "argsIgnorePattern": "^_",
+          "varsIgnorePattern": "^_",
+          "caughtErrorsIgnorePattern": "^_"
+        }
+      ]
+    }
+  },
+  "prettier": {
+    "printWidth": 100
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.0.1",
+    "@types/jest": "^29.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.36.1",
+    "@typescript-eslint/parser": "^5.36.1",
+    "dotenv-cli": "^6.0.0",
+    "eslint": "^8.23.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-plugin-jest": "^27.0.1",
+    "jest": "^29.0.1",
+    "prettier": "2.7.1",
+    "ts-jest": "^28.0.8"
+  },
+  "dependencies": {
+    "@actions/core": "^1.9.1",
+    "@actions/github": "^5.0.3",
+    "@vercel/ncc": "^0.34.0",
+    "typescript": "^4.8.2"
+  }
+}

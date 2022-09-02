@@ -1,0 +1,5 @@
+# comment
+file1.txt @team1
+file2.txt @team2 @team3
+file3.txt @org1/team4
+file4.txt @team1
