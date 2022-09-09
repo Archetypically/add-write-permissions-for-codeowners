@@ -12,7 +12,7 @@
     "lint": "eslint --fix **/*.ts",
     "lint:check": "eslint **/*.ts",
     "test": "jest --coverage",
-    "test:watch": "jest --watch",
+    "test:watch": "jest --watch --coverage",
     "test:ci": "jest --coverage --silent",
     "package": "ncc build --source-map --license licenses.txt",
     "preci:package": "tsc",

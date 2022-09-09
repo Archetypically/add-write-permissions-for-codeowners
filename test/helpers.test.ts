@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import * as core from "@actions/core";
 
-import { getFileContents } from "../src/index";
+import { getAllCodeowners, getFileContents } from "../src/helpers";
 
 const TEST_CODEOWNERS_FILE_CONTENTS = String(
   "file1.txt @test1\n" + "file2.txt @test2 @test3\n" + "file3.txt @org1/team1\n"
@@ -74,5 +74,22 @@ describe("getFileContents", () => {
         },
       ]);
     });
+  });
+});
+
+describe("getAllCodeowners", () => {
+  test("returns an empty array when no file contents are provided", () => {
+    expect(getAllCodeowners([])).toEqual([]);
+  });
+
+  test("returns an array of unique owners", () => {
+    expect(
+      getAllCodeowners([
+        {
+          path: "test/fixtures/CODEOWNERS",
+          contents: TEST_CODEOWNERS_FILE_CONTENTS,
+        },
+      ])
+    ).toEqual(["test1", "test2", "test3", "org1/team1"]);
   });
 });

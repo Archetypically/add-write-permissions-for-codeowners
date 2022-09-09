@@ -1,84 +1,15 @@
 /* eslint-disable no-process-env */
 import { inspect } from "util";
-import * as fs from "fs";
 
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import { Octokit } from "@octokit/core";
-import { PaginateInterface } from "@octokit/plugin-paginate-rest";
-import { Api } from "@octokit/plugin-rest-endpoint-methods/dist-types/types";
 
-interface FileContentMapping {
-  path: string;
-  contents: string;
-}
-
-interface HydratedOctokit extends Octokit, Api {
-  paginate: PaginateInterface;
-}
-
-export function getFileContents(
-  defaultFileDetectionLocations: string[] = ["CODEOWNERS", "docs/CODEOWNERS", ".github/CODEOWNERS"]
-): FileContentMapping[] {
-  const filePath = core.getInput("file-path", { required: true });
-  let locationsToCheck = defaultFileDetectionLocations;
-  if (filePath.length > 0) {
-    const thisPlatformPath = core.toPlatformPath(filePath);
-    core.debug(`Using specified path: ${thisPlatformPath}`);
-
-    locationsToCheck = [thisPlatformPath];
-  } else {
-    core.info("Did not find specified input path, using default detection method.");
-  }
-  const existingPaths = locationsToCheck.filter((path) => {
-    return fs.existsSync(path);
-  });
-
-  return existingPaths.map((path) => {
-    core.notice(`Found CODEOWNERS file at '${path}' to operate on.`);
-    return {
-      path,
-      contents: fs.readFileSync(path, "utf8"),
-    };
-  });
-}
-
-export function getAllCodeowners(fileContents: FileContentMapping[]): string[] {
-  const allCodeowners: string[] = fileContents
-    .map(({ contents }) => {
-      return contents
-        .split("\n")
-        .filter((line) => {
-          return !line.startsWith("#") && line.length > 0;
-        })
-        .map((line) => {
-          const [_path, ...owners] = line.split(" ");
-          return owners;
-        })
-        .flat();
-    })
-    .flat();
-
-  return [...new Set(allCodeowners)];
-}
-
-export async function getAllTeamsWithAtLeastWriteAccess(
-  octokit: HydratedOctokit,
-  owner: string,
-  repo: string
-): Promise<string[]> {
-  let { data } = await octokit.rest.repos.listTeams({ owner, repo });
-  console.log(data);
-  const teams = data
-    .filter(({ permission }) => {
-      return ["admin", "push"].includes(permission);
-    })
-    .map(({ slug }) => {
-      return slug;
-    });
-
-  return [...new Set(teams)];
-}
+import { getAllCodeowners, getFileContents } from "./helpers";
+import { addTeamToWriteAccess, getAllTeamsWithAtLeastWriteAccess } from "./teams";
+import {
+  addUserToWriteAccess,
+  getAllDirectCollaboratorsWithAtLeastWriteAccess,
+} from "./collaborators";
 
 export async function main() {
   try {
@@ -98,16 +29,87 @@ export async function main() {
     core.notice(`Found ${allCodeowners.length} unique codeowners.`);
     core.debug(`All codeowners: ${inspect(allCodeowners)}`);
 
+    if (allCodeowners.length === 0) {
+      core.notice("No CODEOWNERS found; nothing to do.");
+      return;
+    }
+
+    const teamCodeowners = allCodeowners.filter((codeowner) => {
+      return codeowner.includes("/");
+    });
+    core.notice(`Found ${teamCodeowners.length} unique team codeowners.`);
+    core.debug(`Team codeowners: ${inspect(teamCodeowners)}`);
+
+    const userCodeowners = allCodeowners.filter((codeowner) => {
+      return !codeowner.includes("/");
+    });
+    core.notice(`Found ${userCodeowners.length} unique user codeowners.`);
+    core.debug(`User codeowners: ${inspect(userCodeowners)}`);
+
     const githubToken = core.getInput("github-token", { required: true });
     const octokit = github.getOctokit(githubToken);
 
+    // TEAM-Y OPERATIONS
     const allTeamsWithAtLeastWriteAccess = await getAllTeamsWithAtLeastWriteAccess(
       octokit,
       github.context.repo.owner,
       github.context.repo.repo
     );
-    core.notice(`Found ${allTeamsWithAtLeastWriteAccess.length} unique teams with write access.`);
-    core.debug(`All teams with write access: ${allTeamsWithAtLeastWriteAccess}`);
+    core.info(`Found ${allTeamsWithAtLeastWriteAccess.length} teams with at least write access.`);
+    core.debug(`All teams with at least write access: ${inspect(allTeamsWithAtLeastWriteAccess)}`);
+
+    const failedTeams: string[] = [];
+    teamCodeowners.forEach(async (team) => {
+      const [orgName, teamSlug] = team.replaceAll("@", "").split("/");
+      core.debug(`Found org: '${orgName}' and team: '${teamSlug}' from '${team}'.`);
+      if (allTeamsWithAtLeastWriteAccess.includes(teamSlug)) {
+        core.notice(`Team '${teamSlug}' already has at least write access; skipping.`);
+      } else {
+        await addTeamToWriteAccess(
+          octokit,
+          orgName,
+          github.context.repo.repo,
+          teamSlug,
+          isDryRun
+        ).catch((error) => {
+          failedTeams.push(teamSlug);
+          core.warning(`Failed to give write access to team '${teamSlug}': ${error}`);
+        });
+      }
+    });
+
+    // USER-Y OPERATIONS HERE
+    const allUsersWithAtLeastWriteAccess = await getAllDirectCollaboratorsWithAtLeastWriteAccess(
+      octokit,
+      github.context.repo.owner,
+      github.context.repo.repo
+    );
+    core.info(`Found ${allUsersWithAtLeastWriteAccess.length} users with at least write access.`);
+    core.debug(`All users with at least write access: ${inspect(allUsersWithAtLeastWriteAccess)}`);
+    const failedUsers: string[] = [];
+    userCodeowners.forEach(async (user) => {
+      if (allUsersWithAtLeastWriteAccess.includes(user)) {
+        core.notice(`User '${user}' already has at least write access; skipping.`);
+      } else {
+        await addUserToWriteAccess(
+          octokit,
+          github.context.repo.owner,
+          github.context.repo.repo,
+          user,
+          isDryRun
+        ).catch((error) => {
+          failedUsers.push(user);
+          core.warning(`Failed to give write access to user '${user}': ${error}`);
+        });
+      }
+    });
+
+    if (failedTeams.length > 0 || failedUsers.length > 0) {
+      const errorMsg =
+        `Failed to give write access to teams: ${failedTeams.join(", ")}. ` +
+        `Failed to give write access to users: ${failedUsers.join(", ")}.`;
+      throw new Error(errorMsg);
+    }
   } catch (error: any) {
     core.debug(inspect(error, false, 2, true));
     core.setOutput("success", false);

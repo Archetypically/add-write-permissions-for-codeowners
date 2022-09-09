@@ -1,0 +1,54 @@
+---
+name: Add permissions for CODEOWNERS
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Whether to use the marketplace version or the latest version from the repository.
+        type: choice
+        choices:
+          - marketplace
+          - repository
+        required: true
+      file-path:
+        description: |
+          The path to the CODEOWNERS file to operate on.
+          Leave blank to search for all valid CODEOWNERS.
+        required: false
+        default: .github/CODEOWNERS
+        type: string
+      dry-run:
+        description: Dry run?
+        required: true
+        default: true
+        type: choice
+        choices: ["true", "false"]
+
+permissions:
+  contents: write
+
+jobs:
+  add-permissions-to-codeowners:
+    if: github.event.inputs.source == 'repository'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./
+        with:
+          file-path: ${{ github.event.inputs.file-path }}
+          dry-run: ${{ github.event.inputs.dry-run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  add-permissions-to-codeowners-marketplace:
+    if: github.event.inputs.source == 'marketplace'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: Archetypically/add-write-permissions-for-codeowners@v1
+        with:
+          file-path: ${{ github.event.inputs.file-path }}
+          dry-run: ${{ github.event.inputs.dry-run }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}

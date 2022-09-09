@@ -16,6 +16,7 @@ inputs:
       https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#codeowners-file-location.
     required: false
     default: CODEOWNERS
+
   dry-run:
     description: Whether or not to actually make the updates
     required: false
