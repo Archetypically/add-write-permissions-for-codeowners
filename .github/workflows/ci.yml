@@ -53,6 +53,8 @@ jobs:
 
   package-action:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     needs:
       - ci
     steps:
