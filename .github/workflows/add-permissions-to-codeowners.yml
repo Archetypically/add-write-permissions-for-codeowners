@@ -7,7 +7,7 @@ on:
       source:
         description: Whether to use the marketplace version or the latest version from the repository.
         type: choice
-        choices:
+        options:
           - marketplace
           - repository
         required: true
@@ -21,9 +21,7 @@ on:
       dry-run:
         description: Dry run?
         required: true
-        default: true
-        type: choice
-        choices: ["true", "false"]
+        type: boolean
 
 permissions:
   contents: write
