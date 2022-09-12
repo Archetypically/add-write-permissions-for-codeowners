@@ -10,7 +10,7 @@ This GitHub Action will add write permissions for the missing entries in the COD
 
 ```yaml
 ---
-name: Format CODEOWNERS
+name: Add write permissions for CODEOWNERS
 
 on:
   push:
