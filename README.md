@@ -33,6 +33,10 @@ jobs:
 
         # Optional. Whether or not to actually perform the permissions update. Defaults to false.
         dry-run: false
+
+        # Required. The GitHub token to use for the permissions update.
+        # See "github-token" section below for more details.
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Parameters
@@ -41,6 +45,19 @@ jobs:
 | --- | --- | --- |
 | `file-path` | The path to the CODEOWNERS file to format. Will auto-detect if not passed in. | `CODEOWNERS` |
 | `dry-run` | Whether or not to actually perform the permissions update. | `false` |
+| `github-token` | The GitHub token to use for the permissions update. | - |
+
+#### `github-token`
+
+If you are running this action in an org-scoped repository that will be operating on organization teams, you will likely need a personal access token (PAT) with the following scopes:
+
+- `repo`: in order to add teams/collaborators to the repository.
+- `read:org`: in order to list organization teams and their permissions on the repository.
+
+If you instead are using a GitHub App's [installation token](https://docs.github.com/en/developers/apps/building-github-apps/authenticating-with-github-apps#authenticating-as-an-installation), you will need to grant the following permissions to the token:
+
+- `contents: write`: in order to write teams/collaborators to the repository.
+- `members: read`: in order to list organization teams and their permissions on the repository.
 
 ## Development
 
