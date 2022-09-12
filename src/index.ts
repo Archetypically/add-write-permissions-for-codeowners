@@ -49,60 +49,73 @@ export async function main() {
     const githubToken = core.getInput("github-token", { required: true });
     const octokit = github.getOctokit(githubToken);
 
-    // TEAM-Y OPERATIONS
-    const allTeamsWithAtLeastWriteAccess = await getAllTeamsWithAtLeastWriteAccess(
-      octokit,
-      github.context.repo.owner,
-      github.context.repo.repo
-    );
-    core.info(`Found ${allTeamsWithAtLeastWriteAccess.length} teams with at least write access.`);
-    core.debug(`All teams with at least write access: ${inspect(allTeamsWithAtLeastWriteAccess)}`);
-
     const failedTeams: string[] = [];
-    teamCodeowners.forEach(async (team) => {
-      const [orgName, teamSlug] = team.replaceAll("@", "").split("/");
-      core.debug(`Found org: '${orgName}' and team: '${teamSlug}' from '${team}'.`);
-      if (allTeamsWithAtLeastWriteAccess.includes(teamSlug)) {
-        core.notice(`Team '${teamSlug}' already has at least write access; skipping.`);
-      } else {
-        await addTeamToWriteAccess(
-          octokit,
-          orgName,
-          github.context.repo.repo,
-          teamSlug,
-          isDryRun
-        ).catch((error) => {
-          failedTeams.push(teamSlug);
-          core.warning(`Failed to give write access to team '${teamSlug}': ${error}`);
-        });
-      }
-    });
+    const failedUsers: string[] = [];
+
+    // TEAM-Y OPERATIONS
+    if (teamCodeowners.length > 0) {
+      const allTeamsWithAtLeastWriteAccess = await getAllTeamsWithAtLeastWriteAccess(
+        octokit,
+        github.context.repo.owner,
+        github.context.repo.repo
+      );
+      core.info(`Found ${allTeamsWithAtLeastWriteAccess.length} teams with at least write access.`);
+      core.debug(
+        `All teams with at least write access: ${inspect(allTeamsWithAtLeastWriteAccess)}`
+      );
+
+      teamCodeowners.forEach(async (team) => {
+        const [orgName, teamSlug] = team.replaceAll("@", "").split("/");
+        core.debug(`Found org: '${orgName}' and team: '${teamSlug}' from '${team}'.`);
+        if (allTeamsWithAtLeastWriteAccess.includes(teamSlug)) {
+          core.notice(`Team '${teamSlug}' already has at least write access; skipping.`);
+        } else {
+          await addTeamToWriteAccess(
+            octokit,
+            orgName,
+            github.context.repo.repo,
+            teamSlug,
+            isDryRun
+          ).catch((error) => {
+            failedTeams.push(teamSlug);
+            core.warning(`Failed to give write access to team '${teamSlug}': ${error}`);
+          });
+        }
+      });
+    } else {
+      core.notice("No team codeowners found; skipping team operations.");
+    }
 
     // USER-Y OPERATIONS HERE
-    const allUsersWithAtLeastWriteAccess = await getAllDirectCollaboratorsWithAtLeastWriteAccess(
-      octokit,
-      github.context.repo.owner,
-      github.context.repo.repo
-    );
-    core.info(`Found ${allUsersWithAtLeastWriteAccess.length} users with at least write access.`);
-    core.debug(`All users with at least write access: ${inspect(allUsersWithAtLeastWriteAccess)}`);
-    const failedUsers: string[] = [];
-    userCodeowners.forEach(async (user) => {
-      if (allUsersWithAtLeastWriteAccess.includes(user)) {
-        core.notice(`User '${user}' already has at least write access; skipping.`);
-      } else {
-        await addUserToWriteAccess(
-          octokit,
-          github.context.repo.owner,
-          github.context.repo.repo,
-          user,
-          isDryRun
-        ).catch((error) => {
-          failedUsers.push(user);
-          core.warning(`Failed to give write access to user '${user}': ${error}`);
-        });
-      }
-    });
+    if (userCodeowners.length > 0) {
+      const allUsersWithAtLeastWriteAccess = await getAllDirectCollaboratorsWithAtLeastWriteAccess(
+        octokit,
+        github.context.repo.owner,
+        github.context.repo.repo
+      );
+      core.info(`Found ${allUsersWithAtLeastWriteAccess.length} users with at least write access.`);
+      core.debug(
+        `All users with at least write access: ${inspect(allUsersWithAtLeastWriteAccess)}`
+      );
+      userCodeowners.forEach(async (user) => {
+        if (allUsersWithAtLeastWriteAccess.includes(user)) {
+          core.notice(`User '${user}' already has at least write access; skipping.`);
+        } else {
+          await addUserToWriteAccess(
+            octokit,
+            github.context.repo.owner,
+            github.context.repo.repo,
+            user,
+            isDryRun
+          ).catch((error) => {
+            failedUsers.push(user);
+            core.warning(`Failed to give write access to user '${user}': ${error}`);
+          });
+        }
+      });
+    } else {
+      core.notice("No user codeowners found; skipping user operations.");
+    }
 
     if (failedTeams.length > 0 || failedUsers.length > 0) {
       const errorMsg =
