@@ -19,6 +19,9 @@ on:
     paths:
       - 'CODEOWNERS'
 
+permissions:
+  contents: write
+
 jobs:
   add-write-permissions-for-codeowners:
     runs-on: ubuntu-latest
