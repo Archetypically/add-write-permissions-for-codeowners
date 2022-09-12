@@ -45,7 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: Archetypically/add-write-permissions-for-codeowners@v1
+      - uses: Archetypically/add-write-permissions-for-codeowners@latest
         with:
           file-path: ${{ github.event.inputs.file-path }}
           dry-run: ${{ github.event.inputs.dry-run }}
