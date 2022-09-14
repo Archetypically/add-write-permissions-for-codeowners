@@ -59,8 +59,9 @@ If you are running this action in an org-scoped repository that will be operatin
 
 If you instead are using a GitHub App's [installation token](https://docs.github.com/en/developers/apps/building-github-apps/authenticating-with-github-apps#authenticating-as-an-installation), you will need to grant the following permissions to the token:
 
-- `contents: write`: in order to write teams/collaborators to the repository.
-- `members: read`: in order to list organization teams and their permissions on the repository.
+- `metadata: read`: in order to list and collaborators and their permissions on the repository.
+- `members: read`: in order to read data on organization teams and their permissions on the repository.
+- `administration: write`: in order to add teams/collaborators to the repository.
 
 ## Development
 
