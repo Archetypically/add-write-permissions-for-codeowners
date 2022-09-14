@@ -131,7 +131,7 @@ function getAllCodeowners(fileContents) {
             return !line.startsWith("#") && line.length > 0;
         })
             .map((line) => {
-            const [_path, ...owners] = line.split(" ");
+            const [_path, ...owners] = line.trim().split(/\s+/);
             return owners;
         })
             .flat();
