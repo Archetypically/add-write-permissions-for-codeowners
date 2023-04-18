@@ -59,7 +59,6 @@ function getAllCodeowners(fileContents) {
         })
             .map((line) => {
             const [_path, ...owners] = line.trim().split(/\s+/);
-            console.log(_path, owners);
             return owners;
         })
             .flat();
